@@ -2618,8 +2618,8 @@ class PlayState extends MusicBeatState
 					curLightEvent = 0;
 				}
 
-			case 'Kill Henchmen':
-				killHenchmen();
+			case 'Jumpscare':
+				jumpscare(Std.parseFloat(value1), Std.parseFloat(value2));
 
 			case 'Add Camera Zoom':
 				if(ClientPrefs.camZooms && FlxG.camera.zoom < 1.35) {
