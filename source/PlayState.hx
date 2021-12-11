@@ -69,16 +69,16 @@ class PlayState extends MusicBeatState
 	public static var STRUM_X_MIDDLESCROLL = -278;
 
 	public static var ratingStuff:Array<Dynamic> = [
-		['ported by myzen99', 0.2], //From 0% to 19%
-		['ported by myzen99', 0.4], //From 20% to 39%
-		['ported by myzen99', 0.5], //From 40% to 49%
-		['ported by myzen99', 0.6], //From 50% to 59%
-		['ported by myzen99', 0.69], //From 60% to 68%
-		['ported by myzen99', 0.7], //69%
-		['ported by myzen99', 0.8], //From 70% to 79%
-		['ported by myzen99', 0.9], //From 80% to 89%
-		['ported by myzen99', 1], //From 90% to 99%
-		['ported by myzen99', 1] //The value on this one isn't used actually, since Perfect is always "1"
+		['You Suck!', 0.2], //From 0% to 19%
+		['Shit', 0.4], //From 20% to 39%
+		['Bad', 0.5], //From 40% to 49%
+		['Bruh', 0.6], //From 50% to 59%
+		['Meh', 0.69], //From 60% to 68%
+		['Nice', 0.7], //69%
+		['Good', 0.8], //From 70% to 79%
+		['Great', 0.9], //From 80% to 89%
+		['Sick!', 1], //From 90% to 99%
+		['Perfect!!', 1] //The value on this one isn't used actually, since Perfect is always "1"
 	];
 	
 	#if (haxe >= "4.0.0")
@@ -172,6 +172,7 @@ class PlayState extends MusicBeatState
 	public static var usedPractice:Bool = false;
 	public static var changedDifficulty:Bool = false;
 	public static var cpuControlled:Bool = false;
+	var runCutscene:Bool = false;
 
 	var botplaySine:Float = 0;
 	var botplayTxt:FlxText;
@@ -907,7 +908,7 @@ class PlayState extends MusicBeatState
 		scoreTxt.visible = !ClientPrefs.hideHud;
 		add(scoreTxt);
 
-		botplayTxt = new FlxText(400, timeBarBG.y + 55, FlxG.width - 800, "BotPlaying", 32);
+		botplayTxt = new FlxText(400, timeBarBG.y + 55, FlxG.width - 800, "BOTPLAY", 32);
 		botplayTxt.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		botplayTxt.scrollFactor.set();
 		botplayTxt.borderSize = 1.25;
@@ -1035,9 +1036,13 @@ class PlayState extends MusicBeatState
 				case 'senpai' | 'roses' | 'thorns':
 					if(daSong == 'roses') FlxG.sound.play(Paths.sound('ANGRY'));
 					schoolIntro(doof);
-
 				default:
-					startCountdown();
+					if (dialogueJson == null)
+						startCountdown();
+					else
+					{
+                        startDialogue(dialogueJson);
+					}
 			}
 			seenCutscene = true;
 		} else {
@@ -1119,37 +1124,45 @@ class PlayState extends MusicBeatState
 	}
 
 	public function startVideo(name:String):Void {
-		#if VIDEOS_ALLOWED
 		var foundFile:Bool = false;
-		var fileName = Paths.video(name);
-		if(OpenFlAssets.exists(fileName)) {
+		var fileName = name;
+		if(OpenFlAssets.exists("assets/videos/" + fileName + ".webm")) 
+		{
 			foundFile = true;
 		}
 
-		if(foundFile) {
-			inCutscene = true;
-			var bg = new FlxSprite(-FlxG.width, -FlxG.height).makeGraphic(FlxG.width * 3, FlxG.height * 3, FlxColor.BLACK);
-			bg.scrollFactor.set();
-			bg.cameras = [camHUD];
-			add(bg);
-
-			(new FlxVideo(fileName)).finishCallback = function() {
-				remove(bg);
-				if(endingSong) {
+		if(foundFile) 
+		{
+			if (!runCutscene)
+		    {
+	            FlxG.switchState(new VideoState2('assets/videos/' + fileName + '.webm', function()
+	            {
+	                FlxG.switchState(new PlayState());  
+	                runCutscene = true;                          
+	            }));
+		    }
+		    else
+		    {
+				if(endingSong) 
+				{
 					endSong();
-				} else {
+				} 
+				else 
+				{
 					startCountdown();
 				}
+		    }
+		} 
+		else 
+		{
+			if(endingSong) 
+			{
+				endSong();
+			} 
+			else 
+			{
+				startCountdown();
 			}
-			return;
-		} else {
-			FlxG.log.warn('Couldnt find video file: ' + fileName);
-		}
-		#end
-		if(endingSong) {
-			endSong();
-		} else {
-			startCountdown();
 		}
 	}	
 
@@ -1979,9 +1992,9 @@ class PlayState extends MusicBeatState
 		super.update(elapsed);
 
 		if(ratingString == '?') {
-			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingString | ported by myzen99;
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingString;
 		} else {
-			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingString + ' (' + Math.floor(ratingPercent * 100) + '%)' | ported by myzen99;
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingString + ' (' + Math.floor(ratingPercent * 100) + '%)';
 		}
 
 		if(cpuControlled) {
@@ -2618,8 +2631,8 @@ class PlayState extends MusicBeatState
 					curLightEvent = 0;
 				}
 
-			case 'Jumpscare':
-				jumpscare(Std.parseFloat(value1), Std.parseFloat(value2));
+			case 'Kill Henchmen':
+				killHenchmen();
 
 			case 'Add Camera Zoom':
 				if(ClientPrefs.camZooms && FlxG.camera.zoom < 1.35) {
@@ -2915,6 +2928,7 @@ class PlayState extends MusicBeatState
 		endingSong = true;
 		camZooming = false;
 		inCutscene = false;
+		runCutscene = false; 
 		updateTime = false;
 
 		deathCounter = 0;
